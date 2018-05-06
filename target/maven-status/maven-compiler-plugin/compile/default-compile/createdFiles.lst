@@ -1,0 +1,13 @@
+com/memories_of_war/bot/CommandHandler.class
+com/memories_of_war/bot/utils/Colors.class
+com/memories_of_war/bot/commands/HelpBotCommand.class
+com/memories_of_war/bot/database/DiscordUserRepository.class
+com/memories_of_war/bot/commands/IBotCommand.class
+com/memories_of_war/bot/database/DiscordResourcesRepository.class
+com/memories_of_war/bot/utils/Ranks.class
+com/memories_of_war/bot/Application.class
+com/memories_of_war/bot/utils/Flags.class
+com/memories_of_war/bot/utils/Emotes.class
+com/memories_of_war/bot/BotRESTfulController.class
+com/memories_of_war/bot/database/DiscordResources.class
+com/memories_of_war/bot/database/DiscordUser.class

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +16,7 @@ import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
 
 @SpringBootApplication
+@EnableAutoConfiguration
 public class Application {
 
     // Logger.
@@ -23,8 +25,8 @@ public class Application {
     // as of 23.06.2017, moving the autowired annotation from the setter to this
     // property fucks up everything.
     private static CommandHandler basicCommandHandler;
-    // Discord token for GoW-bot. Same case as the CommandHandler.
-    private static String GOW_TOKEN;
+    // Discord token for bot. Same case as the CommandHandler.
+    private static String CLIENT_TOKEN;
 
     /**
      * Main method run statically.
@@ -36,7 +38,7 @@ public class Application {
         SpringApplication.run(Application.class, args);
 
         // get token as environment variable.
-        final String token = GOW_TOKEN;
+        final String token = CLIENT_TOKEN;
 
         try {
             IDiscordClient cli = new ClientBuilder().withToken(token).withRecommendedShardCount().build();
@@ -59,9 +61,9 @@ public class Application {
         basicCommandHandler = bch;
     }
 
-    @Value("${discord.gow_token}")
-    private void setGowToken(String gowToken) {
-        GOW_TOKEN = gowToken;
+    @Value("${discord.CLIENT_TOKEN}")
+    private void setClientToken(String clientToken) {
+        CLIENT_TOKEN = clientToken;
     }
 
     /**

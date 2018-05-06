@@ -8,6 +8,6 @@ public class BotRESTfulController {
 	
 	@RequestMapping("/")
 	public String index() {
-		return "VV-bot is probably alive now.";
+		return "Bot is probably alive now.";
 	}
 }

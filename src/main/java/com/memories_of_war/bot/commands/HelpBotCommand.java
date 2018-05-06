@@ -36,12 +36,12 @@ public class HelpBotCommand implements IBotCommand {
 
     @Override
     public String getCommandName() {
-        return "!help";
+        return "?help";
     }
 
     @Override
     public String getCommandDescription() {
-        return "Type !help to show this tooltip.";
+        return "Type ?help to show this tooltip.";
     }
 
 }
