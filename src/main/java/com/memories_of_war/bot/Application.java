@@ -1,7 +1,6 @@
 package com.memories_of_war.bot;
 
 import com.memories_of_war.bot.database.DiscordResourcesRepository;
-import com.memories_of_war.bot.database.DiscordUserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,7 +79,7 @@ public class Application {
     }
 
     @Bean
-    public CommandLineRunner demo(DiscordUserRepository dur, DiscordResourcesRepository drr) {
+    public CommandLineRunner demo() {
         return (args) -> {
             log.info("Command Line Runner is running.");
         };

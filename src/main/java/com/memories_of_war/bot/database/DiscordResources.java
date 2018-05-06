@@ -16,8 +16,6 @@ public class DiscordResources {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@OneToOne(mappedBy = "discordResources")
-	private DiscordUser discordUser;
 
 	@CreationTimestamp
 	private Timestamp cooldown;
@@ -53,20 +51,12 @@ public class DiscordResources {
 	@Override
 	public String toString() {
 		return String.format(
-				"Discord user resources [id='%d', cooldown='%s', gems='%d', gold='%d', spentGems='%d', spentGold='%d', v2Launched='%d', DiscordUser.username='%s']",
-				this.id, this.cooldown, this.gems, this.gold, this.spentGems, this.spentGold, this.v2Launched, discordUser.getDiscordUsername());
+				"Discord user resources [id='%d', cooldown='%s', gems='%d', gold='%d', spentGems='%d', spentGold='%d', v2Launched='%d']",
+				this.id, this.cooldown, this.gems, this.gold, this.spentGems, this.spentGold, this.v2Launched);
 	}
 
 	public Long getId() {
 		return id;
-	}
-
-	public DiscordUser getDiscordUser() {
-		return discordUser;
-	}
-
-	public void setDiscordUser(DiscordUser discordUser) {
-		this.discordUser = discordUser;
 	}
 
 	public Timestamp getCooldown() {

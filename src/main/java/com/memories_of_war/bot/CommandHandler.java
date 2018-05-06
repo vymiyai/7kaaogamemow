@@ -64,6 +64,7 @@ public class CommandHandler {
         // do nothing if there is no command match.
     }
 
+    /*
     @EventSubscriber
     public void onUserJoined(UserJoinEvent event) {
         IUser user = event.getUser();
@@ -78,6 +79,7 @@ public class CommandHandler {
             log.error(this.errorMessage, e);
         }
     }
+    */
 
     @EventSubscriber
     public void onSelfJoined(ReadyEvent event) {
