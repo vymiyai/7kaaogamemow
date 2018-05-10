@@ -4,17 +4,17 @@ import com.memories_of_war.bot.commands.IBotCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
-import sx.blah.discord.handle.impl.events.guild.member.UserJoinEvent;
 import sx.blah.discord.handle.obj.ActivityType;
-import sx.blah.discord.handle.obj.IRole;
-import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.StatusType;
 import sx.blah.discord.util.DiscordException;
+import sx.blah.discord.util.MissingPermissionsException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,13 +22,13 @@ import java.util.List;
 @Component
 public class CommandHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(CommandHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommandHandler.class);
 
-    private String welcomeMessage = "NOT USED";
-    private String readyMesssage = "*Test bot online.";
-    private String playingText = "!help";
     private String botUserName = "Arenagma";
-    private String errorMessage = "Message could not be sent with error: \n";
+    private String placeholder = "*resolving...*";
+
+    @Value("${discord.TARGET_CHANNEL}")
+    private String targetChannel;
 
     private HashMap<String, IBotCommand> basicCommands;
 
@@ -78,31 +78,34 @@ public class CommandHandler {
         } catch (DiscordException e) {
             log.error(this.errorMessage, e);
         }
-    }
-    */
+    }*/
 
     @EventSubscriber
     public void onSelfJoined(ReadyEvent event) {
-        String response = this.readyMesssage;
-
         event.getClient().getGuilds().forEach((guild) -> {
             try {
 
                 IDiscordClient client = event.getClient();
                 client.changeUsername(botUserName);
-                client.changePresence(StatusType.ONLINE, ActivityType.WATCHING, "?help");
-                guild.getDefaultChannel().sendMessage(response);
+                client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "?help");
+                LOGGER.info(this.botUserName + " now online.");
 
-            } catch (DiscordException e) {
-                log.error(this.errorMessage, e);
+                LOGGER.info("Trying to access channel " + targetChannel + "...");
+                List<IChannel> channels = guild.getChannelsByName(targetChannel);
+
+                for(IChannel channel : channels) {
+                    try {
+                        channel.bulkDelete();
+                    } catch (DiscordException de) {
+                        LOGGER.info("No messages to bulk delete in channel {}.", channel.getName());
+                    }
+
+                    channel.sendMessage(placeholder);
+                }
+
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage(), e);
             }
         });
     }
-
-    private String getWelcomeMessage() {
-        StringBuilder response = new StringBuilder();
-        response.append(readyMesssage);
-        return response.toString();
-    }
-
 }

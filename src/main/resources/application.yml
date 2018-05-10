@@ -1,5 +1,6 @@
 discord:
   CLIENT_TOKEN: ${CLIENT_TOKEN}
+  TARGET_CHANNEL: overworld
 ### Auto creates and auto drops a table. Good for development but suicidal in production.
 #  hibernate.ddl-auto: create-drop
   properties:
