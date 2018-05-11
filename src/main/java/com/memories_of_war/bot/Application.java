@@ -22,6 +22,8 @@ public class Application {
     // Logger.
     private static final Logger log = LoggerFactory.getLogger(Application.class);
 
+    public static IDiscordClient DISCORD_CLIENT;
+
     @Autowired
     private void setBasicCommandHandler(CommandHandler bch) {
         basicCommandHandler = bch;
@@ -51,13 +53,13 @@ public class Application {
         final String token = CLIENT_TOKEN;
 
         try {
-            IDiscordClient cli = new ClientBuilder().withToken(token).withRecommendedShardCount().build();
+            DISCORD_CLIENT = new ClientBuilder().withToken(token).withRecommendedShardCount().build();
 
             // Register a listener via the EventSubscriber annotation which allows for organization and delegation of events
-            cli.getDispatcher().registerListener(basicCommandHandler);
+            DISCORD_CLIENT.getDispatcher().registerListener(basicCommandHandler);
 
             // Only login after all events are registered otherwise some may be missed.
-            cli.login();
+            DISCORD_CLIENT.login();
         } catch (Exception e) {
             // do nothing.
             log.warn("WARNING - Discord4J :" + e.getMessage());

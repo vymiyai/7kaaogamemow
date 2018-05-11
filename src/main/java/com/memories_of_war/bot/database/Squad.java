@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 public class Squad {
@@ -41,5 +42,13 @@ public class Squad {
 
     public void setSquadState(SquadState squadState) {
         this.squadState = squadState;
+    }
+
+    public void refreshLastModified() {
+	    this.lastModified = Timestamp.valueOf(LocalDateTime.now());
+    }
+
+    public Timestamp getLastModified() {
+	    return this.lastModified;
     }
 }

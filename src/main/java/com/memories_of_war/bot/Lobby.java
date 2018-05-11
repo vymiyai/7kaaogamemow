@@ -1,6 +1,8 @@
 package com.memories_of_war.bot;
 
 import com.memories_of_war.bot.database.*;
+import com.memories_of_war.bot.services.DiscordRoleService;
+import com.memories_of_war.bot.services.SquadService;
 import com.memories_of_war.bot.utils.Flags;
 import com.memories_of_war.bot.utils.SquadState;
 import org.slf4j.Logger;
@@ -14,6 +16,9 @@ import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RateLimitException;
 
 import java.awt.*;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -35,6 +40,9 @@ public class Lobby {
     @Autowired
     private UnitRepository unitRepository;
 
+    @Autowired
+    private SquadService squadService;
+
     private IMessage LOBBY_MESSAGE = null;
 
     @Scheduled(fixedRate = 5000)
@@ -49,7 +57,7 @@ public class Lobby {
             builder.withColor(Color.black);
 
             builder.withAuthorIcon(Flags.FO);
-            builder.withAuthorName("WAITING SQUADS");
+            builder.withAuthorName("SQUADS WAITING FOR MEMBERS");
             builder.withAuthorUrl(Flags.GI);
 
             builder.withTitle("Lobby");
@@ -58,14 +66,20 @@ public class Lobby {
             int index = 1;
             Iterable<Squad> squads = squadRepository.findBySquadStateNot(SquadState.CLOSED);
             for(Squad squad : squads) {
-                List<Unit> units = unitRepository.findBySquad(squad);
-                builder.appendField("[" + units.size() + "/" + MAXIMUM_NUMBER_OF_SQUAD_MEMBERS + "] SQUAD " + squad.getId(), this.getFormattedSquadComponents(units), true);
-                index++;
+
+                if (this.isSquadIdleForMoreThanFiveMinutes(squad.getLastModified())) {
+                    LOGGER.info("Disbanding squad {} due to inactivity.", squad.getId());
+                    squadService.disbandSquad(squad.getId());
+                } else {
+                    List<Unit> units = unitRepository.findBySquad(squad);
+                    builder.appendField("[" + units.size() + "/" + MAXIMUM_NUMBER_OF_SQUAD_MEMBERS + "] SQUAD " + squad.getId(), this.getFormattedSquadComponents(units), true);
+                    index++;
+                }
             }
 
             try {
                 if (index == 1) {
-                    LOBBY_MESSAGE.edit("```There are no squads registered. You can start a new one by using the \"?squad new\" command.```");
+                    LOBBY_MESSAGE.edit("```There are no active squads. You can start a new one by using the \"?squad new\" command.```");
                 } else {
                     LOBBY_MESSAGE.edit(builder.build());
                 }
@@ -75,14 +89,19 @@ public class Lobby {
         }
     }
 
+    private boolean isSquadIdleForMoreThanFiveMinutes(Timestamp lastModfiied) {
+        return lastModfiied.toLocalDateTime().isBefore(LocalDateTime.now().minusMinutes(5));
+    }
+
     private String getFormattedSquadComponents(List<Unit> units) {
         return String.join("\n", units.stream().map(Unit::getUnitNameWithFaction).collect(Collectors.toList()));
     }
 
     public void initializeLobby(IMessage message) {
-        for(int i = 1; i <= MAXIMUM_NUMBER_OF_SQUADS; i++) {
-            Squad squad = new Squad(i);
+        for(int index = 1; index <= MAXIMUM_NUMBER_OF_SQUADS; index++) {
+            Squad squad = new Squad(index);
             squadRepository.save(squad);
+
         }
 
         this.LOBBY_MESSAGE = message;

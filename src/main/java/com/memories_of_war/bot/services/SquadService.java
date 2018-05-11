@@ -1,18 +1,29 @@
-package com.memories_of_war.bot.database;
+package com.memories_of_war.bot.services;
 
+import com.memories_of_war.bot.Application;
+import com.memories_of_war.bot.database.Squad;
+import com.memories_of_war.bot.database.SquadRepository;
+import com.memories_of_war.bot.database.Unit;
+import com.memories_of_war.bot.database.UnitRepository;
 import com.memories_of_war.bot.exceptions.UserInformationException;
 import com.memories_of_war.bot.utils.SquadState;
 import com.memories_of_war.bot.utils.UnitState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sx.blah.discord.handle.obj.IGuild;
+import sx.blah.discord.handle.obj.IUser;
 
 import java.util.List;
 import java.util.Objects;
 
 @Service
 public class SquadService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SquadService.class);
 
     @Value("${discord.MAXIMUM_NUMBER_OF_SQUAD_MEMBERS}")
     private int MAXIMUM_NUMBER_OF_SQUAD_MEMBERS;
@@ -21,7 +32,10 @@ public class SquadService {
     private SquadRepository squadRepository;
 
     @Autowired
-    private  UnitRepository unitRepository;
+    private UnitRepository unitRepository;
+
+    @Autowired
+    private DiscordRoleService discordRoleService;
 
     private void abortIfUnitAlreadyInASquad(Unit unit) throws UserInformationException {
         if(Objects.nonNull(unit.getSquad())) {
@@ -39,8 +53,29 @@ public class SquadService {
         }
     }
 
-    @Transactional()
+    @Transactional
+    public void disbandSquad(long squadId) {
+        LOGGER.info("Disbanding squad [{}].", squadId);
+
+        Squad squad = squadRepository.findOne(squadId);
+        List<Unit> units = unitRepository.findBySquad(squad);
+        units.stream().forEach(unit -> {unit.setSquad(null); unit.setUnitState(UnitState.IDLE);});
+        squad.setSquadState(SquadState.CLOSED);
+        squad.refreshLastModified();
+
+        for(IGuild guild : Application.DISCORD_CLIENT.getGuilds()) {
+            if(guild.getName().equals("March of War")) {
+                for(Unit unit : units){
+                    IUser user = guild.getUserByID(unit.getId());
+                    discordRoleService.removeSquadRole(guild, user);
+                }
+            }
+        }
+    }
+
+    @Transactional
     public void newSquad(long unitId) throws UserInformationException {
+
         Unit unit = this.findUnitById(unitId);
 
         abortIfUnitAlreadyInASquad(unit);
@@ -52,6 +87,8 @@ public class SquadService {
             squad.setSquadState(SquadState.WAITING);
             unit.setSquad(squad);
             unit.setUnitState(UnitState.WAITING_IN_LOBBY);
+
+            LOGGER.info("Unit [{}] formed new squad [{}].", unitId, squad.getId());
         } else {
             throw new UserInformationException(": maximum number of concurrent squads reached.");
         }
@@ -71,6 +108,8 @@ public class SquadService {
         if(unitRepository.findBySquad(squad).size() < MAXIMUM_NUMBER_OF_SQUAD_MEMBERS) {
             unit.setSquad(squad);
             unit.setUnitState(UnitState.WAITING_IN_LOBBY);
+
+            LOGGER.info("Unit [{}] has joined squad [{}].", unitId, squad.getId());
         } else {
             throw new UserInformationException(": could not join squad. The squad is full.");
         }
@@ -89,6 +128,9 @@ public class SquadService {
 
             unit.setSquad(null);
             unit.setUnitState(UnitState.IDLE);
+            squad.refreshLastModified();
+
+            LOGGER.info("Unit [{}] has left squad [{}].", unitId, squad.getId());
         }
     }
 }

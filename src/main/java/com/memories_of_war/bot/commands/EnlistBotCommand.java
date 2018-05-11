@@ -21,7 +21,7 @@ public class EnlistBotCommand implements IBotCommand {
     @Autowired
     protected com.memories_of_war.bot.database.UnitRepository UnitRepository;
 
-    private boolean isFirstCharacter(Long discordId) throws UserInformationException {
+    private boolean abortIfUserAlreadyRegistered(Long discordId) throws UserInformationException {
         if (this.UnitRepository.findOne(discordId) == null)
             return true;
         else
@@ -36,8 +36,7 @@ public class EnlistBotCommand implements IBotCommand {
         Long discordId = event.getAuthor().getLongID();
 
         try {
-            this.isFirstCharacter(discordId);
-
+            this.abortIfUserAlreadyRegistered(discordId);
 
             int meleeProficiency = 1;						// AW SE
             int rifleProficiency = 1;                       // UR LJ

@@ -1,6 +1,7 @@
 package com.memories_of_war.bot.commands;
 
-import com.memories_of_war.bot.database.SquadService;
+import com.memories_of_war.bot.services.DiscordRoleService;
+import com.memories_of_war.bot.services.SquadService;
 import com.memories_of_war.bot.exceptions.UserInformationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
+import sx.blah.discord.handle.obj.IUser;
 
 @Component
 public class SquadBotCommand implements IBotCommand {
@@ -20,11 +22,15 @@ public class SquadBotCommand implements IBotCommand {
     @Autowired
     private SquadService squadService;
 
+    @Autowired
+    private DiscordRoleService discordRoleService;
+
     @Override
     public void execute(String[] tokenizedMessage, MessageReceivedEvent event) {
 
-        String mention = event.getAuthor().mention();
-        Long discordId = event.getAuthor().getLongID();
+        IUser author = event.getAuthor();
+        String mention = author.mention();
+        Long discordId = author.getLongID();
 
         try {
             if (tokenizedMessage.length == 1) {
@@ -36,12 +42,14 @@ public class SquadBotCommand implements IBotCommand {
             if (tokenizedMessage.length == 2) {
                 if(tokenizedMessage[1].toLowerCase().equals("leave") || tokenizedMessage[1].toLowerCase().equals("-l")) {
                     squadService.leaveSquad(discordId);
+                    discordRoleService.removeSquadRole(event.getGuild(), author);
                     event.getChannel().sendMessage(mention + ": left the current squad.");
                     return;
                 }
 
                 if(tokenizedMessage[1].toLowerCase().equals("new") || tokenizedMessage[1].toLowerCase().equals("-n")) {
                     squadService.newSquad(discordId);
+                    discordRoleService.addSquadRole(event.getGuild(), author);
                     event.getChannel().sendMessage(mention + ": new squad raised.");
                     return;
                 } else {
@@ -59,6 +67,7 @@ public class SquadBotCommand implements IBotCommand {
                     }
 
                     squadService.joinSquad(squadId, discordId);
+                    discordRoleService.addSquadRole(event.getGuild(), author);
                     event.getChannel().sendMessage(mention + ": joined squad " + squadId + ".");
                     return;
                 } else {
@@ -75,7 +84,7 @@ public class SquadBotCommand implements IBotCommand {
         } catch (Exception e) {
             event.getChannel().sendMessage(mention + e.getMessage());
 
-            String errorMessage = String.format("User %s in channel %s:", event.getAuthor().getName(), event.getChannel().getName());
+            String errorMessage = String.format("User %s in channel %s:", author.getName(), event.getChannel().getName());
             LOGGER.error(errorMessage, e);
         }
     }

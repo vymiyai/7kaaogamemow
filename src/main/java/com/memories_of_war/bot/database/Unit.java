@@ -113,6 +113,10 @@ public class Unit {
         this.shotgunProficiency = shotgunProficiency;
     }
 
+    public Long getId() {
+        return id;
+    }
+
     public Timestamp getCreationDate() {
         return creationDate;
     }
