@@ -10,15 +10,27 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
 
 @SpringBootApplication
 @EnableAutoConfiguration
+@EnableScheduling
 public class Application {
 
     // Logger.
     private static final Logger log = LoggerFactory.getLogger(Application.class);
+
+    @Autowired
+    private void setBasicCommandHandler(CommandHandler bch) {
+        basicCommandHandler = bch;
+    }
+
+    @Value("${discord.CLIENT_TOKEN}")
+    private void setClientToken(String clientToken) {
+        CLIENT_TOKEN = clientToken;
+    }
 
     // as of 23.06.2017, moving the autowired annotation from the setter to this
     // property fucks up everything.
@@ -41,12 +53,10 @@ public class Application {
         try {
             IDiscordClient cli = new ClientBuilder().withToken(token).withRecommendedShardCount().build();
 
-            // Register a listener via the EventSubscriber annotation which
-            // allows for organization and delegation of events
+            // Register a listener via the EventSubscriber annotation which allows for organization and delegation of events
             cli.getDispatcher().registerListener(basicCommandHandler);
 
-            // Only login after all events are registered otherwise some may be
-            // missed.
+            // Only login after all events are registered otherwise some may be missed.
             cli.login();
         } catch (Exception e) {
             // do nothing.
@@ -54,22 +64,6 @@ public class Application {
         }
     }
 
-    @Autowired
-    private void setBasicCommandHandler(CommandHandler bch) {
-        basicCommandHandler = bch;
-    }
-
-    @Value("${discord.CLIENT_TOKEN}")
-    private void setClientToken(String clientToken) {
-        CLIENT_TOKEN = clientToken;
-    }
-
-    /**
-     * Bean that lists java Beans registered by Spring.
-     *
-     * @param ctx
-     * @return
-     */
     @Bean
     public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
         return args -> {

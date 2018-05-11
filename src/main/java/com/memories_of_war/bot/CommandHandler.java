@@ -14,7 +14,6 @@ import sx.blah.discord.handle.obj.ActivityType;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.StatusType;
 import sx.blah.discord.util.DiscordException;
-import sx.blah.discord.util.MissingPermissionsException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,13 +23,17 @@ public class CommandHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommandHandler.class);
 
-    private String botUserName = "Arenagma";
-    private String placeholder = "*resolving...*";
-
     @Value("${discord.TARGET_CHANNEL}")
     private String targetChannel;
 
+    private String botUserName = "Arenagma";
+
     private HashMap<String, IBotCommand> basicCommands;
+
+    private String placeholder = "*resolving...*";
+
+    @Autowired
+    private Lobby lobby;
 
     @Autowired
     public void setBasicCommands(List<IBotCommand> injectedBasicCommands) {
@@ -80,6 +83,7 @@ public class CommandHandler {
         }
     }*/
 
+    /*
     @EventSubscriber
     public void onSelfJoined(ReadyEvent event) {
         event.getClient().getGuilds().forEach((guild) -> {
@@ -102,6 +106,38 @@ public class CommandHandler {
 
                     channel.sendMessage(placeholder);
                 }
+
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage(), e);
+            }
+        });
+    }*/
+
+
+    @EventSubscriber
+    public void onSelfJoined(ReadyEvent event) {
+        event.getClient().getGuilds().forEach((guild) -> {
+            try {
+
+                LOGGER.info("Initializing {}...", this.botUserName);
+                IDiscordClient client = event.getClient();
+                client.changeUsername(botUserName);
+                client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "?help");
+
+                LOGGER.info("Trying to access channel " + targetChannel + "...");
+                List<IChannel> channels = guild.getChannelsByName(targetChannel);
+
+                for (IChannel channel : channels) {
+                    try {
+                        channel.bulkDelete();
+                    } catch (DiscordException de) {
+                        LOGGER.info("No messages to bulk delete in channel {}.", channel.getName());
+                    }
+
+                    lobby.initializeLobbyMessage(channel.sendMessage(placeholder));
+                }
+
+                LOGGER.info("{} is now online.", this.botUserName);
 
             } catch (Exception e) {
                 LOGGER.error(e.getMessage(), e);

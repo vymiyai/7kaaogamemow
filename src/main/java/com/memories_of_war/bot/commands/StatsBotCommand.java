@@ -85,7 +85,25 @@ public class StatsBotCommand implements IBotCommand {
                 }
             }
 
-            if(emoteAndFactionName.equals("factionless")) {
+            String unitState;
+            switch (unit.getUnitState()){
+                case IDLE:
+                    unitState = "Idle";
+                    break;
+                case WAITING_IN_LOBBY:
+                    unitState = "Waiting in Lobby";
+                    break;
+                case IN_COMBAT:
+                    unitState = "In Combat";
+                    break;
+                case IN_MOVEMENT:
+                    unitState = "Moving";
+                    break;
+                default:
+                    unitState = "Idle";
+            }
+
+            if (emoteAndFactionName.equals("factionless")) {
                 throw new Exception("Discord user does not belong to a faction.");
             }
 
@@ -94,7 +112,8 @@ public class StatsBotCommand implements IBotCommand {
             builder.withColor(factionColor);
 
             builder.withAuthorIcon(factionFlag);
-            builder.withAuthorName(event.getAuthor().getDisplayName(event.getGuild()));
+            //builder.withAuthorName(event.getAuthor().getDisplayName(event.getGuild()));
+            builder.withAuthorName(unit.getUnitName());
             builder.withAuthorUrl(factionFlag);
 
             builder.withThumbnail(event.getAuthor().getAvatarURL());
@@ -110,12 +129,13 @@ public class StatsBotCommand implements IBotCommand {
             //builder.appendField("Wealth", ":moneybag: " + resources.getGold() + "/10000", true);
             //builder.appendField("Wealth spent", ":moneybag: " + resources.getSpentGold(), true);
 
-            builder.appendField("HEALTH POINTS", unit.getCurrentHealthPoints() + "/" + unit.getHealthPoints(), false);
+            builder.appendField("Health Points", unit.getCurrentHealthPoints() + "/" + unit.getHealthPoints(), true);
+            builder.appendField("Current State", unitState, true);
 
-            builder.appendField("COMBAT PROFICIENCY", unit.getCombatProficienciesNames(), true);
-            builder.appendField("LEVEL", unit.getCombatProficienciesLevels(), true);
+            builder.appendField("Combat Proficiency", unit.getCombatProficienciesNames(), true);
+            builder.appendField("Level", unit.getCombatProficienciesLevels(), true);
 
-            builder.appendField("ENLISTED SINCE", unit.getCreationDate().toString(), false);
+            builder.appendField("Enlisted since", unit.getCreationDate().toString(), false);
 
             event.getChannel().sendMessage(builder.build());
 

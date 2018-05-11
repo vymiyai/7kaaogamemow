@@ -1,6 +1,6 @@
-package com.memories_of_war.bot.database;
+package com.memories_of_war.bot.commands;
 
-import com.memories_of_war.bot.commands.IBotCommand;
+import com.memories_of_war.bot.database.Unit;
 import com.memories_of_war.bot.utils.Faction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,13 +18,13 @@ public class EnlistBotCommand implements IBotCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger(EnlistBotCommand.class);
 
     @Autowired
-    protected UnitRepository UnitRepository;
+    protected com.memories_of_war.bot.database.UnitRepository UnitRepository;
 
     private boolean isFirstCharacter(Long discordId) throws Exception {
         if (this.UnitRepository.findOne(discordId) == null)
             return true;
         else
-            throw new Exception("User already has a registered character.");
+            throw new Exception("User already has a registered unit.");
     }
 
     @Override
@@ -96,7 +96,7 @@ public class EnlistBotCommand implements IBotCommand {
             }
 
             // create the new user.
-            Unit unit = new Unit(discordId, faction);
+            Unit unit = new Unit(discordId, event.getAuthor().getDisplayName(event.getGuild()), faction);
             unit.setMeleeProficiency(meleeProficiency);
             unit.setRifleProficiency(rifleProficiency);
             unit.setSmgProficiency(smgProficiency);

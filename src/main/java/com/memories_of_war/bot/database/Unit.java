@@ -1,17 +1,20 @@
 package com.memories_of_war.bot.database;
 
+import com.memories_of_war.bot.utils.Emotes;
 import com.memories_of_war.bot.utils.Faction;
+import com.memories_of_war.bot.utils.UnitState;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import java.sql.Timestamp;
 
 @Entity
 public class Unit {
 
-    public int UNIT_HEALTH_POINT_MULTIPLIER = 2;
+    public int STARTING_HEALTH_POINTS = 20;
 
 	@Id
 	private Long id;
@@ -26,7 +29,14 @@ public class Unit {
 
 	private int currentHealthPoints;
 
+	private UnitState unitState;
+
+	@ManyToOne
+	private Squad squad;
+
 	private Faction faction;
+
+	private String unitName;
 
 	// combat proficiencies
     private int meleeProficiency;						// AW SE
@@ -55,13 +65,16 @@ public class Unit {
     }
 
 	// new user constructor.
-	public Unit(long id, Faction faction) {
+	public Unit(long id, String unitName, Faction faction) {
 	    this.id = id;
+	    this.unitName = unitName;
 	    this.faction = faction;
 
-        this.meleeProficiency = 5;
-	    this.healthPoints = this.meleeProficiency * this.UNIT_HEALTH_POINT_MULTIPLIER;
+	    this.healthPoints = this.STARTING_HEALTH_POINTS;
 	    this.currentHealthPoints = this.healthPoints;
+
+	    this.unitState = UnitState.IDLE;
+	    this.squad = null;
 	}
 
     public void setMeleeProficiency(int meleeProficiency) {
@@ -147,11 +160,52 @@ public class Unit {
                 this.shotgunProficiency);
     }
 
-    @Override
-	public String toString() {
-		return String.format(
-				"Unit [id='%d', HP: %d/%d, Combat: %d]",
-				this.id, this.currentHealthPoints, this.currentHealthPoints, this.meleeProficiency);
-	}
+    public String getUnitName() {
+        return unitName;
+    }
 
+    public String getUnitNameWithFaction() {
+
+        String factionEmote;
+        switch (this.faction) {
+            case LATIN_JUNTA:
+                factionEmote = Emotes.LJ;
+                break;
+            case SOVIET_UNION:
+                factionEmote = Emotes.SU;
+                break;
+            case SHOGUN_EMPIRE:
+                factionEmote = Emotes.SE;
+                break;
+            case UNITED_REPUBLIC:
+                factionEmote = Emotes.UR;
+                break;
+            case AFRICAN_WARLORDS:
+                factionEmote = Emotes.AW;
+                break;
+            case EUROPEAN_ALLIANCE:
+                factionEmote = Emotes.EA;
+                break;
+            default:
+                factionEmote = "";
+        }
+
+        return factionEmote + " " + unitName;
+    }
+
+    public UnitState getUnitState() {
+        return unitState;
+    }
+
+    public void setUnitState(UnitState unitState) {
+        this.unitState = unitState;
+    }
+
+    public Squad getSquad() {
+        return squad;
+    }
+
+    public void setSquad(Squad squad) {
+        this.squad = squad;
+    }
 }
