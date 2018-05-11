@@ -9,4 +9,6 @@ import java.util.List;
 public interface SquadRepository extends CrudRepository<Squad, Long> {
 
     List<Squad> findBySquadState(SquadState squadState);
+
+    List<Squad> findBySquadStateNot(SquadState squadState);
 }

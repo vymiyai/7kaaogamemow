@@ -28,7 +28,7 @@ public class Squad {
 
     public Squad(long squadId){
         this.id = squadId;
-        this.squadState = SquadState.WAITING;
+        this.squadState = SquadState.CLOSED;
     }
 
     public Long getId() {

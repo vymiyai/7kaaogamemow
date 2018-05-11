@@ -2,6 +2,7 @@ package com.memories_of_war.bot.commands;
 
 import com.memories_of_war.bot.database.Unit;
 import com.memories_of_war.bot.database.UnitRepository;
+import com.memories_of_war.bot.exceptions.UserInformationException;
 import com.memories_of_war.bot.utils.Colors;
 import com.memories_of_war.bot.utils.Emotes;
 import com.memories_of_war.bot.utils.Flags;
@@ -33,11 +34,11 @@ public class StatsBotCommand implements IBotCommand {
 		Long discordId = event.getAuthor().getLongID();
 		
 		try {
-			Unit unit = unitRepository.findOne(discordId);
-			
-			// throw error if user is not defined.
-			if (unit == null)
-				throw new Exception("User not registered.");
+            Unit unit = unitRepository.findOne(discordId);
+
+            // throw error if user is not defined.
+            if (unit == null)
+                throw new UserInformationException(": user not registered.");
 
             IUser author = event.getAuthor();
             IGuild guild = event.getGuild();
@@ -86,7 +87,7 @@ public class StatsBotCommand implements IBotCommand {
             }
 
             String unitState;
-            switch (unit.getUnitState()){
+            switch (unit.getUnitState()) {
                 case IDLE:
                     unitState = "Idle";
                     break;
@@ -104,7 +105,7 @@ public class StatsBotCommand implements IBotCommand {
             }
 
             if (emoteAndFactionName.equals("factionless")) {
-                throw new Exception("Discord user does not belong to a faction.");
+                throw new UserInformationException(": Discord user does not belong to a faction.");
             }
 
             EmbedBuilder builder = new EmbedBuilder();
@@ -139,6 +140,8 @@ public class StatsBotCommand implements IBotCommand {
 
             event.getChannel().sendMessage(builder.build());
 
+        } catch (UserInformationException e) {
+            event.getChannel().sendMessage(mention + e.getMessage());
         } catch (Exception e) {
             event.getChannel().sendMessage(mention + ": could not retrieve stats.");
 

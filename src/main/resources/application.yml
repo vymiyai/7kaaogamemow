@@ -1,6 +1,8 @@
 discord:
   CLIENT_TOKEN: ${CLIENT_TOKEN}
   TARGET_CHANNEL: overworld
+  MAXIMUM_NUMBER_OF_SQUADS: 6
+  MAXIMUM_NUMBER_OF_SQUAD_MEMBERS: 6
 ### Auto creates and auto drops a table. Good for development but suicidal in production.
 #  hibernate.ddl-auto: create-drop
   properties:

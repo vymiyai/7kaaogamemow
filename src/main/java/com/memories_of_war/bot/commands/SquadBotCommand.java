@@ -1,9 +1,11 @@
 package com.memories_of_war.bot.commands;
 
 import com.memories_of_war.bot.database.SquadService;
+import com.memories_of_war.bot.exceptions.UserInformationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 
@@ -11,6 +13,9 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedE
 public class SquadBotCommand implements IBotCommand {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SquadBotCommand.class);
+
+    @Value("${discord.MAXIMUM_NUMBER_OF_SQUADS}")
+    private int MAXIMUM_NUMBER_OF_SQUADS;
 
     @Autowired
     private SquadService squadService;
@@ -40,7 +45,7 @@ public class SquadBotCommand implements IBotCommand {
                     event.getChannel().sendMessage(mention + ": new squad raised.");
                     return;
                 } else {
-                    throw new Exception(": unrecognized option \"" + event.getMessage().toString() + "\"");
+                    throw new UserInformationException(": unrecognized command option \"" + event.getMessage().toString() + "\"");
                 }
             }
 
@@ -54,10 +59,10 @@ public class SquadBotCommand implements IBotCommand {
                     }
 
                     squadService.joinSquad(squadId, discordId);
-                    event.getChannel().sendMessage(mention + ": joined squad " + squadId);
+                    event.getChannel().sendMessage(mention + ": joined squad " + squadId + ".");
                     return;
                 } else {
-                    throw new Exception(": unrecognized option \"" + event.getMessage().toString() + "\"");
+                    throw new UserInformationException(": unrecognized command option \"" + event.getMessage().toString() + "\"");
                 }
             }
 
@@ -65,6 +70,8 @@ public class SquadBotCommand implements IBotCommand {
                 event.getChannel().sendMessage(mention + this.getManual());
             }
 
+        } catch (UserInformationException e) {
+            event.getChannel().sendMessage(mention + e.getMessage());
         } catch (Exception e) {
             event.getChannel().sendMessage(mention + e.getMessage());
 
@@ -76,7 +83,7 @@ public class SquadBotCommand implements IBotCommand {
     private String getManual() {
         String manual = "```";
         manual += "Type \"?squad\" to see this manual.\n";
-        manual += "Type \"?squad new\" or \"?squad -n\" to raise a new squad (maximum number of existing squads: " + squadService.MAXIMUM_NUMBER_OF_SQUADS + ").\n";
+        manual += "Type \"?squad new\" or \"?squad -n\" to raise a new squad (maximum number of existing squads: " + MAXIMUM_NUMBER_OF_SQUADS + ").\n";
         manual += "Type \"?squad join <SQUAD_ID>\" or \"?squad -j <SQUAD_ID>\" to join the squad identified by <SQUAD_ID>.\n";
         manual += "Type \"?squad leave\" or \"?squad -l\" to leave your current squad.```";
 

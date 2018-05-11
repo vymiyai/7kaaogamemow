@@ -1,6 +1,7 @@
 package com.memories_of_war.bot.commands;
 
 import com.memories_of_war.bot.database.Unit;
+import com.memories_of_war.bot.exceptions.UserInformationException;
 import com.memories_of_war.bot.utils.Faction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,11 +21,11 @@ public class EnlistBotCommand implements IBotCommand {
     @Autowired
     protected com.memories_of_war.bot.database.UnitRepository UnitRepository;
 
-    private boolean isFirstCharacter(Long discordId) throws Exception {
+    private boolean isFirstCharacter(Long discordId) throws UserInformationException {
         if (this.UnitRepository.findOne(discordId) == null)
             return true;
         else
-            throw new Exception("User already has a registered unit.");
+            throw new UserInformationException(": user already has a registered unit.");
     }
 
     @Override
@@ -92,7 +93,7 @@ public class EnlistBotCommand implements IBotCommand {
             }
 
             if(Objects.isNull(faction)) {
-                throw new Exception("Discord user does not belong to a faction.");
+                throw new UserInformationException(": Discord user does not belong to a faction.");
             }
 
             // create the new user.
@@ -111,6 +112,8 @@ public class EnlistBotCommand implements IBotCommand {
 
             event.getChannel().sendMessage(mention + ": character created.");
 
+        } catch (UserInformationException e) {
+            event.getChannel().sendMessage(mention + e.getMessage());
         } catch (Exception e) {
             event.getChannel().sendMessage(mention + ": could not register character.");
 

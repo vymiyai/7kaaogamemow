@@ -134,7 +134,7 @@ public class CommandHandler {
                         LOGGER.info("No messages to bulk delete in channel {}.", channel.getName());
                     }
 
-                    lobby.initializeLobbyMessage(channel.sendMessage(placeholder));
+                    lobby.initializeLobby(channel.sendMessage(placeholder));
                 }
 
                 LOGGER.info("{} is now online.", this.botUserName);
