@@ -113,7 +113,6 @@ public class StatsBotCommand implements IBotCommand {
             builder.withColor(factionColor);
 
             builder.withAuthorIcon(factionFlag);
-            //builder.withAuthorName(event.getAuthor().getDisplayName(event.getGuild()));
             builder.withAuthorName(unit.getUnitName());
             builder.withAuthorUrl(factionFlag);
 
@@ -122,19 +121,10 @@ public class StatsBotCommand implements IBotCommand {
             //builder.withTitle("Profile");
             //builder.withDescription(user.getDescription());
 
-            //builder.appendField("Allegiance", emoteAndFactionName, false);
-
-            //builder.appendField("Gems", ":gem: " + resources.getGems() + "/1000", true);
-            //builder.appendField("Gems spent", ":gem: " + resources.getSpentGems(), true);
-
-            //builder.appendField("Wealth", ":moneybag: " + resources.getGold() + "/10000", true);
-            //builder.appendField("Wealth spent", ":moneybag: " + resources.getSpentGold(), true);
-
             builder.appendField("Health Points", unit.getCurrentHealthPoints() + "/" + unit.getHealthPoints(), true);
             builder.appendField("Current State", unitState, true);
 
-            builder.appendField("Combat Proficiency", unit.getCombatProficienciesNames(), true);
-            builder.appendField("Level", unit.getCombatProficienciesLevels(), true);
+            builder.appendField("Combat Proficiency / Level", unit.getCombatProficiencies(), false);
 
             builder.appendField("Enlisted since", unit.getCreationDate().toString(), false);
 

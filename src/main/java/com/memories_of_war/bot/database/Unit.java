@@ -125,28 +125,17 @@ public class Unit {
         return currentHealthPoints;
     }
 
-    public String getCombatProficienciesNames() {
-        return "MELEE\n" +
-            "RIFLE\n" +
-            "SUBMACHINE GUN\n" +
-            "MACHINE GUN\n" +
-            "LIQUID PROJECTOR\n" +
-            "ANTI-TANK RIFLE\n" +
-            "ROCKET LAUNCHER\n" +
-            "SNIPER RIFLE\n" +
-            "SHOTGUN";
-    }
-
-    public String getCombatProficienciesLevels() {
-        String format= "%d\n" +
-                "%d\n" +
-                "%d\n" +
-                "%d\n" +
-                "%d\n" +
-                "%d\n" +
-                "%d\n" +
-                "%d\n" +
-                "%d";
+    public String getCombatProficiencies() {
+        String format =
+                "`Melee              %d`\n" +
+                "`Rifle              %d`\n" +
+                "`Submachine Gun     %d`\n" +
+                "`Machine Gun        %d`\n" +
+                "`Liquid Projector   %d`\n" +
+                "`Anti-Tank Rifle    %d`\n" +
+                "`Rocket Launcher    %d`\n" +
+                "`Sniper Rifle       %d`\n" +
+                "`Shotgun            %d`\n";
 
         return String.format(format,
                 this.meleeProficiency,
