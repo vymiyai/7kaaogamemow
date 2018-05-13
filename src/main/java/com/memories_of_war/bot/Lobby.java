@@ -6,6 +6,7 @@ import com.memories_of_war.bot.database.Unit;
 import com.memories_of_war.bot.database.UnitRepository;
 import com.memories_of_war.bot.services.SquadService;
 import com.memories_of_war.bot.utils.Flags;
+import com.memories_of_war.bot.utils.Location;
 import com.memories_of_war.bot.utils.SquadState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import sx.blah.discord.util.RateLimitException;
 import java.awt.*;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -28,6 +30,8 @@ import java.util.stream.Collectors;
 public class Lobby {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Lobby.class);
+
+    private final int STEP_DURATION_IN_MINUTES = 5;
 
     @Value("${discord.MAXIMUM_NUMBER_OF_SQUADS}")
     private int MAXIMUM_NUMBER_OF_SQUADS;
@@ -67,15 +71,32 @@ public class Lobby {
             int index = 1;
             Iterable<Squad> squads = squadRepository.findBySquadStateNot(SquadState.CLOSED);
             for(Squad squad : squads) {
-
-                if (this.isSquadIdleForMoreThanFiveMinutes(squad.getLastModified()) && squad.getSquadState().equals(SquadState.WAITING)) {
+                boolean squadIsIdle = this.isSquadIdleForMoreThanStepDurationMinutes(squad.getLastModified());
+                if (squadIsIdle && squad.getSquadState().equals(SquadState.WAITING)) {
                     LOGGER.info("Disbanding squad {} due to inactivity.", squad.getId());
                     squadService.disbandSquad(squad.getId());
-                } else {
-                    List<Unit> units = unitRepository.findBySquad(squad);
-                    builder.appendField("SQUAD " + squad.getId(), this.getSquadContent(squad, units), true);
-                    index++;
+                    continue;
                 }
+
+                if(squadIsIdle && squad.getSquadState().equals(SquadState.IN_MOVEMENT) && !squad.getDestination().equals(Location.LOBBY)) {
+                    LOGGER.info("Squad {} now engaging the enemy.", squad.getId());
+                    squadService.engageSquad(squad.getId());
+                }
+
+                if(squadIsIdle && squad.getSquadState().equals(SquadState.IN_COMBAT)) {
+                    LOGGER.info("Squad {} has engaged the enemy. Returning to Lobby.", squad.getId());
+                    squadService.returnSquad(squad.getId());
+                }
+
+                if (squadIsIdle && squad.getSquadState().equals(SquadState.IN_MOVEMENT) && squad.getDestination().equals(Location.LOBBY)) {
+                    LOGGER.info("Disbanding squad {} after successfully returning to lobby.", squad.getId());
+                    squadService.disbandSquad(squad.getId());
+                    continue;
+                }
+
+                List<Unit> units = unitRepository.findBySquad(squad);
+                builder.appendField("SQUAD " + squad.getId(), this.getSquadContent(squad, units), false);
+                index++;
             }
 
             try {
@@ -90,15 +111,18 @@ public class Lobby {
         }
     }
 
-    private boolean isSquadIdleForMoreThanFiveMinutes(Timestamp lastModfiied) {
-        return lastModfiied.toLocalDateTime().isBefore(LocalDateTime.now().minusMinutes(5));
+    private boolean isSquadIdleForMoreThanStepDurationMinutes(Timestamp lastModified) {
+        return lastModified.toLocalDateTime().isBefore(LocalDateTime.now().minusMinutes(STEP_DURATION_IN_MINUTES));
     }
 
     private String getSquadContent(Squad squad, List<Unit> units) {
         String content = "";
         switch (squad.getSquadState()){
             case IN_MOVEMENT:
-                content = "Moving towards [" + squad.getFormattedDestination() + "]";
+                long durationInSeconds = Math.abs(ChronoUnit.SECONDS.between(squad.getLastModified().toLocalDateTime().plusMinutes(STEP_DURATION_IN_MINUTES), (LocalDateTime.now())));
+                long minutes = durationInSeconds / 60;
+                long seconds = durationInSeconds % 60;
+                content = "Moving towards [" + squad.getFormattedDestination() + "]. ETA: " + minutes + ":" + seconds;
                 break;
             case IN_COMBAT:
                 content = "Engaging enemy at [" + squad.getFormattedDestination() + "]";
@@ -113,7 +137,7 @@ public class Lobby {
         }
 
         content += "\n\n";
-        content += this.getFormattedSquadComponents(units);
+        content += this.getFormattedSquadComponents(units) + "\n";
         return content;
     }
 

@@ -61,6 +61,19 @@ public class SquadService {
     }
 
     @Transactional
+    public void returnSquad(long squadId) {
+        Squad squad = squadRepository.findOne(squadId);
+        squad.setSquadState(SquadState.IN_MOVEMENT);
+        squad.setDestination(Location.LOBBY);
+    }
+
+    @Transactional
+    public void engageSquad(long squadId) {
+        Squad squad = squadRepository.findOne(squadId);
+        squad.setSquadState(SquadState.IN_COMBAT);
+    }
+
+    @Transactional
     public void sortieSquad(long unitId) throws UserInformationException {
         Unit unit = this.findUnitById(unitId);
         Squad squad = unit.getSquad();
