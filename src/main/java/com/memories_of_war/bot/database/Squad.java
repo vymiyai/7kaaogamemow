@@ -1,5 +1,6 @@
 package com.memories_of_war.bot.database;
 
+import com.memories_of_war.bot.utils.Location;
 import com.memories_of_war.bot.utils.SquadState;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -23,6 +24,8 @@ public class Squad {
 
 	private SquadState squadState;
 
+	private Location destination;
+
 	public Squad() {
 	    // for Hibernate.
     }
@@ -30,6 +33,7 @@ public class Squad {
     public Squad(long squadId){
         this.id = squadId;
         this.squadState = SquadState.CLOSED;
+        this.destination = Location.LOBBY;
     }
 
     public Long getId() {
@@ -50,5 +54,24 @@ public class Squad {
 
     public Timestamp getLastModified() {
 	    return this.lastModified;
+    }
+
+    public Location getDestination() {
+        return destination;
+    }
+
+    public void setDestination(Location destination) {
+        this.destination = destination;
+    }
+
+    public String getFormattedDestination() {
+        switch (this.destination) {
+            case LOBBY:
+                return "Lobby";
+            case ABANDONED_BUNKER:
+                return "Abandoned Bunker";
+            default:
+                return "Undefined";
+        }
     }
 }

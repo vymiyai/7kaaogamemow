@@ -6,6 +6,7 @@ import com.memories_of_war.bot.database.SquadRepository;
 import com.memories_of_war.bot.database.Unit;
 import com.memories_of_war.bot.database.UnitRepository;
 import com.memories_of_war.bot.exceptions.UserInformationException;
+import com.memories_of_war.bot.utils.Location;
 import com.memories_of_war.bot.utils.SquadState;
 import com.memories_of_war.bot.utils.UnitState;
 import org.slf4j.Logger;
@@ -43,6 +44,12 @@ public class SquadService {
         }
     }
 
+    private void abortIfSquadAlreadySorteing(Squad squad) throws UserInformationException {
+        if(squad.getSquadState().equals(SquadState.IN_COMBAT) || squad.getSquadState().equals(SquadState.IN_MOVEMENT)) {
+            throw new UserInformationException(": command cannot be issued while the squad is sortieing.");
+        }
+    }
+
     @Transactional(readOnly = true)
     private Unit findUnitById(long unitId) throws UserInformationException {
         Unit unit = unitRepository.findOne(unitId);
@@ -54,6 +61,21 @@ public class SquadService {
     }
 
     @Transactional
+    public void sortieSquad(long unitId) throws UserInformationException {
+        Unit unit = this.findUnitById(unitId);
+        Squad squad = unit.getSquad();
+
+        abortIfSquadAlreadySorteing(squad);
+
+        if(squad.getSquadState().equals(SquadState.WAITING)) {
+            LOGGER.info("User [{}] has ordered squad [{}] to sortie.", unit.getId(), squad.getId());
+            squad.setSquadState(SquadState.IN_MOVEMENT);
+        } else {
+            throw new UserInformationException(": only squads waiting in the lobby can sortie.");
+        }
+    }
+
+    @Transactional
     public void disbandSquad(long squadId) {
         LOGGER.info("Disbanding squad [{}].", squadId);
 
@@ -61,6 +83,7 @@ public class SquadService {
         List<Unit> units = unitRepository.findBySquad(squad);
         units.stream().forEach(unit -> {unit.setSquad(null); unit.setUnitState(UnitState.IDLE);});
         squad.setSquadState(SquadState.CLOSED);
+        squad.setDestination(Location.LOBBY);
         squad.refreshLastModified();
 
         for(IGuild guild : Application.DISCORD_CLIENT.getGuilds()) {
@@ -85,6 +108,8 @@ public class SquadService {
         if(closedSquads.size() > 0){
             Squad squad = closedSquads.get(0);
             squad.setSquadState(SquadState.WAITING);
+            squad.setDestination(Location.ABANDONED_BUNKER);
+
             unit.setSquad(squad);
             unit.setUnitState(UnitState.WAITING_IN_LOBBY);
 
@@ -101,8 +126,15 @@ public class SquadService {
         abortIfUnitAlreadyInASquad(unit);
 
         Squad squad = squadRepository.findOne(squadId);
-        if(Objects.isNull(squad) || squad.getSquadState().equals(SquadState.CLOSED)) {
+
+        abortIfSquadAlreadySorteing(squad);
+
+        if(Objects.isNull(squad)) {
             throw new UserInformationException(": could not find a squad with ID " + squadId    + ".");
+        }
+
+        if(squad.getSquadState().equals(SquadState.CLOSED)) {
+            throw new UserInformationException(": squad " + squadId    + " is currently on a mission.");
         }
 
         if(unitRepository.findBySquad(squad).size() < MAXIMUM_NUMBER_OF_SQUAD_MEMBERS) {
@@ -122,8 +154,11 @@ public class SquadService {
         if(Objects.nonNull(unit.getSquad())) {
             Squad squad = unit.getSquad();
 
+            abortIfSquadAlreadySorteing(squad);
+
             if(unitRepository.findBySquad(squad).size() == 1) {
                 squad.setSquadState(SquadState.CLOSED);
+                squad.setDestination(Location.LOBBY);
             }
 
             unit.setSquad(null);

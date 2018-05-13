@@ -1,7 +1,9 @@
 package com.memories_of_war.bot;
 
-import com.memories_of_war.bot.database.*;
-import com.memories_of_war.bot.services.DiscordRoleService;
+import com.memories_of_war.bot.database.Squad;
+import com.memories_of_war.bot.database.SquadRepository;
+import com.memories_of_war.bot.database.Unit;
+import com.memories_of_war.bot.database.UnitRepository;
 import com.memories_of_war.bot.services.SquadService;
 import com.memories_of_war.bot.utils.Flags;
 import com.memories_of_war.bot.utils.SquadState;
@@ -18,7 +20,6 @@ import sx.blah.discord.util.RateLimitException;
 import java.awt.*;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -57,8 +58,8 @@ public class Lobby {
             builder.withColor(Color.black);
 
             builder.withAuthorIcon(Flags.FO);
-            builder.withAuthorName("SQUADS WAITING FOR MEMBERS");
-            builder.withAuthorUrl(Flags.GI);
+            builder.withAuthorName("SQUADS");
+            builder.withAuthorUrl(Flags.FO);
 
             builder.withTitle("Lobby");
             builder.withDescription("Type ?squad to see the squad options.");
@@ -67,12 +68,12 @@ public class Lobby {
             Iterable<Squad> squads = squadRepository.findBySquadStateNot(SquadState.CLOSED);
             for(Squad squad : squads) {
 
-                if (this.isSquadIdleForMoreThanFiveMinutes(squad.getLastModified())) {
+                if (this.isSquadIdleForMoreThanFiveMinutes(squad.getLastModified()) && squad.getSquadState().equals(SquadState.WAITING)) {
                     LOGGER.info("Disbanding squad {} due to inactivity.", squad.getId());
                     squadService.disbandSquad(squad.getId());
                 } else {
                     List<Unit> units = unitRepository.findBySquad(squad);
-                    builder.appendField("[" + units.size() + "/" + MAXIMUM_NUMBER_OF_SQUAD_MEMBERS + "] SQUAD " + squad.getId(), this.getFormattedSquadComponents(units), true);
+                    builder.appendField("SQUAD " + squad.getId(), this.getSquadContent(squad, units), true);
                     index++;
                 }
             }
@@ -91,6 +92,29 @@ public class Lobby {
 
     private boolean isSquadIdleForMoreThanFiveMinutes(Timestamp lastModfiied) {
         return lastModfiied.toLocalDateTime().isBefore(LocalDateTime.now().minusMinutes(5));
+    }
+
+    private String getSquadContent(Squad squad, List<Unit> units) {
+        String content = "";
+        switch (squad.getSquadState()){
+            case IN_MOVEMENT:
+                content = "Moving towards [" + squad.getFormattedDestination() + "]";
+                break;
+            case IN_COMBAT:
+                content = "Engaging enemy at [" + squad.getFormattedDestination() + "]";
+                break;
+            case WAITING:
+                content = "Waiting in lobby [" + units.size() + "/" + MAXIMUM_NUMBER_OF_SQUAD_MEMBERS + "] - Destination: [" + squad.getFormattedDestination() + "]";
+                break;
+            case CLOSED:
+                break;
+            default:
+                break;
+        }
+
+        content += "\n\n";
+        content += this.getFormattedSquadComponents(units);
+        return content;
     }
 
     private String getFormattedSquadComponents(List<Unit> units) {

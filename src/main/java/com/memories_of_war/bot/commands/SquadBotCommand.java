@@ -47,10 +47,16 @@ public class SquadBotCommand implements IBotCommand {
                     return;
                 }
 
+                if(tokenizedMessage[1].toLowerCase().equals("sortie") || tokenizedMessage[1].toLowerCase().equals("-s")) {
+                    squadService.sortieSquad(discordId);
+                    event.getGuild().getChannelsByName("squads").get(0).sendMessage(mention + " has ordered squad to sortie.");
+                    return;
+                }
+
                 if(tokenizedMessage[1].toLowerCase().equals("new") || tokenizedMessage[1].toLowerCase().equals("-n")) {
                     squadService.newSquad(discordId);
                     discordRoleService.addSquadRole(event.getGuild(), author);
-                    event.getChannel().sendMessage(mention + ": new squad raised.");
+                    event.getGuild().getChannelsByName("squads").get(0).sendMessage(mention + ": new squad raised.");
                     return;
                 } else {
                     throw new UserInformationException(": unrecognized command option \"" + event.getMessage().toString() + "\"");
@@ -68,7 +74,7 @@ public class SquadBotCommand implements IBotCommand {
 
                     squadService.joinSquad(squadId, discordId);
                     discordRoleService.addSquadRole(event.getGuild(), author);
-                    event.getChannel().sendMessage(mention + ": joined squad " + squadId + ".");
+                    event.getGuild().getChannelsByName("squads").get(0).sendMessage(mention + ": joined squad " + squadId + ".");
                     return;
                 } else {
                     throw new UserInformationException(": unrecognized command option \"" + event.getMessage().toString() + "\"");
@@ -94,6 +100,7 @@ public class SquadBotCommand implements IBotCommand {
         manual += "Type \"?squad\" to see this manual.\n";
         manual += "Type \"?squad new\" or \"?squad -n\" to raise a new squad (maximum number of existing squads: " + MAXIMUM_NUMBER_OF_SQUADS + ").\n";
         manual += "Type \"?squad join <SQUAD_ID>\" or \"?squad -j <SQUAD_ID>\" to join the squad identified by <SQUAD_ID>.\n";
+        manual += "Type \"?squad sortie\" or \"?squad -s\" to sortie your squad to the designated target.\n";
         manual += "Type \"?squad leave\" or \"?squad -l\" to leave your current squad.```";
 
         return manual;
