@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.RateLimitException;
+import sx.blah.discord.util.RequestBuffer;
 
 import java.awt.*;
 import java.sql.Timestamp;
@@ -50,7 +51,7 @@ public class Lobby {
 
     private IMessage LOBBY_MESSAGE = null;
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRate = 2000)
     public void refresh() {
 
         if(Objects.isNull(LOBBY_MESSAGE)) {
@@ -99,15 +100,20 @@ public class Lobby {
                 index++;
             }
 
-            try {
-                if (index == 1) {
-                    LOBBY_MESSAGE.edit("```There are no active squads. You can start a new one by using the \"?squad new\" command.```");
-                } else {
-                    LOBBY_MESSAGE.edit(builder.build());
+            final boolean noSquadsAvailable = index == 1;
+
+            RequestBuffer.request(() -> {
+                try {
+                    if (noSquadsAvailable) {
+                        LOBBY_MESSAGE.edit("```There are no active squads. You can start a new one by using the \"?squad new\" command.```");
+                    } else {
+                        LOBBY_MESSAGE.edit(builder.build());
+                    }
+                } catch (RateLimitException e) {
+                    LOGGER.warn(e.getMessage());
+                    throw e;
                 }
-            } catch (RateLimitException e) {
-                LOGGER.warn(e.getMessage());
-            }
+            });
         }
     }
 
@@ -122,7 +128,7 @@ public class Lobby {
                 long durationInSeconds = Math.abs(ChronoUnit.SECONDS.between(squad.getLastModified().toLocalDateTime().plusMinutes(STEP_DURATION_IN_MINUTES), (LocalDateTime.now())));
                 long minutes = durationInSeconds / 60;
                 long seconds = durationInSeconds % 60;
-                content = "Moving towards [" + squad.getFormattedDestination() + "]. ETA: " + minutes + ":" + seconds;
+                content = "Moving to [" + squad.getFormattedDestination() + "]. ETA: " + minutes + ":" + String.format("%02d", seconds);
                 break;
             case IN_COMBAT:
                 content = "Engaging enemy at [" + squad.getFormattedDestination() + "]";
